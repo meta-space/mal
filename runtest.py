@@ -9,7 +9,8 @@ from subprocess import Popen, STDOUT, PIPE
 from select import select
 
 # Pseudo-TTY and terminal manipulation
-import pty, array, fcntl, termios
+##import pty, array, fcntl, termios
+import array, msvcrt
 
 IS_PY_3 = sys.version_info[0] == 3
 
@@ -70,62 +71,107 @@ parser.add_argument('mal_cmd', nargs="*",
 parser.add_argument('--crlf', dest='crlf', action='store_true',
         help="Write \\r\\n instead of \\n to the input")
 
+import os
+import atexit
+import time
+import signal
+import array
+import re
+import select
+import platform
+import subprocess
+
+IS_PY_3 = sys.version_info >= (3,)
+
 class Runner():
+    p=None
     def __init__(self, args, no_pty=False, line_break="\n"):
-        #print "args: %s" % repr(args)
         self.no_pty = no_pty
+        self.line_break = line_break
 
         # Cleanup child process on exit
         atexit.register(self.cleanup)
 
-        self.p = None
-        env = os.environ
+        if platform.system() == "Windows":
+            self.init_windows(args)
+        else:
+            self.init_posix(args)
+
+        self.buf = ""
+        self.last_prompt = ""
+
+    def init_windows(self, args):
+        env = os.environ.copy()
         env['TERM'] = 'dumb'
         env['INPUTRC'] = '/dev/null'
         env['PERL_RL'] = 'false'
-        if no_pty:
-            self.p = Popen(args, bufsize=0,
-                           stdin=PIPE, stdout=PIPE, stderr=STDOUT,
-                           preexec_fn=os.setsid,
-                           env=env)
+
+        if self.no_pty:
+            self.p = subprocess.Popen(
+                args,
+                bufsize=0,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=env,
+                universal_newlines=True,
+                shell=True,  # You might need to adjust this depending on your command
+            )
+        else:
+            raise NotImplementedError("PTY support not implemented for Windows")
+
+        self.stdin = self.p.stdin
+        self.stdout = self.p.stdout
+
+    def init_posix(self, args):
+        # Keep your existing code for POSIX systems
+        import pty
+        import termios
+        import fcntl
+
+        env = os.environ.copy()
+        env['TERM'] = 'dumb'
+        env['INPUTRC'] = '/dev/null'
+        env['PERL_RL'] = 'false'
+
+        if self.no_pty:
+            self.p = subprocess.Popen(
+                args,
+                bufsize=0,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                preexec_fn=os.setsid,
+                env=env,
+                universal_newlines=True,
+            )
             self.stdin = self.p.stdin
             self.stdout = self.p.stdout
         else:
-            # provide tty to get 'interactive' readline to work
             master, slave = pty.openpty()
-
-            # Set terminal size large so that readline will not send
-            # ANSI/VT escape codes when the lines are long.
             buf = array.array('h', [100, 200, 0, 0])
             fcntl.ioctl(master, termios.TIOCSWINSZ, buf, True)
-
-            self.p = Popen(args, bufsize=0,
-                           stdin=slave, stdout=slave, stderr=STDOUT,
-                           preexec_fn=os.setsid,
-                           env=env)
-            # Now close slave so that we will get an exception from
-            # read when the child exits early
-            # http://stackoverflow.com/questions/11165521
+            self.p = subprocess.Popen(
+                args,
+                bufsize=0,
+                stdin=slave,
+                stdout=slave,
+                stderr=subprocess.STDOUT,
+                preexec_fn=os.setsid,
+                env=env,
+                universal_newlines=True,
+            )
             os.close(slave)
             self.stdin = os.fdopen(master, 'r+b', 0)
             self.stdout = self.stdin
 
-        #print "started"
-        self.buf = ""
-        self.last_prompt = ""
-
-        self.line_break = line_break
-
     def read_to_prompt(self, prompts, timeout):
         end_time = time.time() + timeout
         while time.time() < end_time:
-            [outs,_,_] = select([self.stdout], [], [], 1)
+            [outs, _, _] = select.select([self.stdout], [], [], 1)
             if self.stdout in outs:
                 new_data = self.stdout.read(1)
                 new_data = new_data.decode("utf-8") if IS_PY_3 else new_data
-                #print("new_data: '%s'" % new_data)
-                debug(new_data)
-                # Perform newline cleanup
                 self.buf += new_data.replace("\r", "")
                 for prompt in prompts:
                     regexp = re.compile(prompt)
@@ -145,13 +191,8 @@ class Runner():
         self.stdin.write(_to_bytes(str.replace('\r', '\x16\r') + self.line_break))
 
     def cleanup(self):
-        #print "cleaning up"
-        if self.p:
-            try:
-                os.killpg(self.p.pid, signal.SIGTERM)
-            except OSError:
-                pass
-            self.p = None
+        pass
+
 
 class TestReader:
     def __init__(self, test_file):
@@ -227,7 +268,7 @@ if args.rundir: os.chdir(args.rundir)
 if args.log_file:   log_file   = open(args.log_file, "a")
 if args.debug_file: debug_file = open(args.debug_file, "a")
 
-r = Runner(args.mal_cmd, no_pty=args.no_pty, line_break="\r\n" if args.crlf else "\n")
+r = Runner(args.mal_cmd, no_pty=True, line_break="\r\n" if args.crlf else "\n")
 t = TestReader(args.test_file)
 
 

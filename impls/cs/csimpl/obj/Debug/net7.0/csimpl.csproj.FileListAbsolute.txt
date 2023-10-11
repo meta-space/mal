@@ -1,0 +1,17 @@
+D:\Sandbox\mal\impls\cs\csimpl\bin\Debug\net7.0\csimpl.exe
+D:\Sandbox\mal\impls\cs\csimpl\bin\Debug\net7.0\csimpl.deps.json
+D:\Sandbox\mal\impls\cs\csimpl\bin\Debug\net7.0\csimpl.runtimeconfig.json
+D:\Sandbox\mal\impls\cs\csimpl\bin\Debug\net7.0\csimpl.dll
+D:\Sandbox\mal\impls\cs\csimpl\bin\Debug\net7.0\csimpl.pdb
+D:\Sandbox\mal\impls\cs\csimpl\obj\Debug\net7.0\csimpl.csproj.AssemblyReference.cache
+D:\Sandbox\mal\impls\cs\csimpl\obj\Debug\net7.0\csimpl.GeneratedMSBuildEditorConfig.editorconfig
+D:\Sandbox\mal\impls\cs\csimpl\obj\Debug\net7.0\csimpl.AssemblyInfoInputs.cache
+D:\Sandbox\mal\impls\cs\csimpl\obj\Debug\net7.0\csimpl.AssemblyInfo.cs
+D:\Sandbox\mal\impls\cs\csimpl\obj\Debug\net7.0\csimpl.csproj.CoreCompileInputs.cache
+D:\Sandbox\mal\impls\cs\csimpl\obj\Debug\net7.0\csimpl.dll
+D:\Sandbox\mal\impls\cs\csimpl\obj\Debug\net7.0\refint\csimpl.dll
+D:\Sandbox\mal\impls\cs\csimpl\obj\Debug\net7.0\csimpl.pdb
+D:\Sandbox\mal\impls\cs\csimpl\obj\Debug\net7.0\csimpl.genruntimeconfig.cache
+D:\Sandbox\mal\impls\cs\csimpl\obj\Debug\net7.0\ref\csimpl.dll
+D:\Sandbox\mal\impls\cs\csimpl\bin\Debug\net7.0\ReadLine.dll
+D:\Sandbox\mal\impls\cs\csimpl\obj\Debug\net7.0\csimpl.csproj.CopyComplete

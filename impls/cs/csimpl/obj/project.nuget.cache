@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "HLmWb/6hK9If8elDFtDApqF9E+AqezB5I7J25WfbvSF6JKOo8QZKpWpN7+N34a0z6/FtpUTcGIejKLNn6aKrhA==",
+  "success": true,
+  "projectFilePath": "D:\\Sandbox\\mal\\impls\\cs\\csimpl\\csimpl.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\fda\\.nuget\\packages\\readline\\2.0.1\\readline.2.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}
