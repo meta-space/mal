@@ -16,7 +16,7 @@ readonly struct Token
 
     public ReadOnlySpan<char> Value(ReadOnlySpan<char> input)
     {
-        return input.Slice(Position, Length);
+        return input.Slice(Position, Length).Trim();
     }
 }
 
@@ -45,16 +45,20 @@ internal ref struct Reader
     private void Tokenize(ReadOnlySpan<char> input)
     {
         // Create a regular expression to match the word "test".
-        string pattern = @"[\s,]*(~@|[\[\]{}()'`~^@]|""(?:\\.|[^\\\""])*""?|;.*|[^\s\[\]{}('"",;)]*)";
+        string pattern = @"[\s,]*(~@|[\[\]{}()'`~^@]|""(?:\\.|[^\\""])*""?|;.*|[^\s\[\]{}('`"",;)]*)";
         var regex = new Regex(pattern);
 
-        // Enumerate the matches in the ReadOnlySpan.
-        foreach (var match in regex.EnumerateMatches(input))
+        foreach (Match match in regex.Matches(input.ToString()))
         {
-            // Do something with the match.
-            //var value = text.Slice(match.Index, match.Length);
-            //Console.WriteLine($"'{value.ToString()}'");
-            _tokens.Add(new Token(match.Index, match.Length));
+            foreach (Group group in match.Groups)
+            {
+                var span = group.ValueSpan;
+                if (!span.IsEmpty && group.Name == "1")
+                {
+                    var token = new Token(group.Index, group.Length);
+                    _tokens.Add(token);
+                }
+            }
         }
     }
 
@@ -70,26 +74,48 @@ internal ref struct Reader
         switch (token.Value(_input))
         {
             case "(":
-                return ReadList();
+                return ReadList(")");
+            case "[":
+                return ReadList("]");
+            case "{":
+                return ReadList("}");
             default:
                 return ReadAtom();
         }
     }
 
-    private MalValue ReadList()
+    private MalValue ReadAtom()
+    {
+        var token = Next();
+        if (decimal.TryParse(token.Value(_input), out var value))
+        {
+            return new MalValue.Number(value);
+        }
+        else
+        {
+            return new MalValue.Atom(token.Value(_input).ToString());
+        }
+
+    }
+
+    private MalValue ReadList(string stop)
     {
         IList<MalValue> values = new List<MalValue>();
         Next(); // consume "(" token
         while (_position < _tokens.Count)
         {
             var token = Peek();
-            if (token.Value(_input) != ")")
+            if (token.Value(_input).CompareTo(stop, StringComparison.InvariantCulture) == 0)
             {
-                values.Add(ReadForm);
+                Next(); // consume ")" token
+                return new MalValue.List(values);
             }
-
+            else // process more items
+            {
+                values.Add(ReadForm());
+            }
         }
 
-        return new MalValue.List(values);
+        return new MalValue.Error($"unmatched {stop} at position", _position);
     }
 }

@@ -3,35 +3,33 @@ namespace csimpl;
 
 internal class Program
 {
-    static string Read()
+    static MalValue Read()
     {
-        return ReadLine.Read("user> ");
+        string input = ReadLine.Read("user> ");
+        return Reader.ReadStr(input);
     }
 
-    static string Eval(string input)
+    static MalValue Eval(MalValue value)
     {
-        return input;
+        return value;
     }
 
-    static void Print(string input)
+    static string Print(MalValue value)
     {
-        Console.WriteLine(input);
+       return Printer.Print(value);
     }
 
     static void Main(string[] args)
     {
+        ReadLine.HistoryEnabled = true;
         // Get command history
         ReadLine.GetHistory();
 
-        // Add command to history
-        ReadLine.AddHistory("dotnet run");
-
-        // Clear history
-        ReadLine.ClearHistory();
-
         while (true)
         {
-            Print(Eval(Read()));
+            Console.WriteLine(Print(Eval(Read())));
         }
+
+        Console.WriteLine("exiting");
     }
 }
