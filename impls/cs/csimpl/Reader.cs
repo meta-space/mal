@@ -1,22 +1,28 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Buffers;
+using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 
 namespace csimpl;
 
 readonly struct Token
 {
-    public readonly int Position;
+    public readonly int Index;
     public readonly int Length;
 
-    public Token(int position, int length)
+    public Token(int index, int length)
     {
-        Position = position;
+        Index = index;
         Length = length;
     }
 
     public ReadOnlySpan<char> Value(ReadOnlySpan<char> input)
     {
-        return input.Slice(Position, Length).Trim();
+        return input.Slice(Index, Length).Trim();
+    }
+
+    public bool IsEqual(ReadOnlySpan<char> input, string token)
+    {
+        return Value(input).CompareTo(token, StringComparison.InvariantCulture) == 0;
     }
 }
 
@@ -50,14 +56,12 @@ internal ref struct Reader
 
         foreach (Match match in regex.Matches(input.ToString()))
         {
-            foreach (Group group in match.Groups)
+            var group = match.Groups[1];
+            var span = group.ValueSpan;
+            if (!span.IsEmpty)
             {
-                var span = group.ValueSpan;
-                if (!span.IsEmpty && group.Name == "1")
-                {
-                    var token = new Token(group.Index, group.Length);
-                    _tokens.Add(token);
-                }
+                var token = new Token(group.Index, group.Length);
+                _tokens.Add(token);
             }
         }
     }
@@ -74,11 +78,11 @@ internal ref struct Reader
         switch (token.Value(_input))
         {
             case "(":
-                return ReadList(")");
+                return new MalValue.List(ReadList("(", ")"));
             case "[":
-                return ReadList("]");
+                return new MalValue.Vector(ReadList("[", "]"));
             case "{":
-                return ReadList("}");
+                return new MalValue.HashMap(ReadHashMap("{", "}"));
             default:
                 return ReadAtom();
         }
@@ -98,24 +102,52 @@ internal ref struct Reader
 
     }
 
-    private MalValue ReadList(string stop)
+    private IList<MalValue> ReadList(string startToken, string stopToken)
     {
-        IList<MalValue> values = new List<MalValue>();
-        Next(); // consume "(" token
+        var list = new List<MalValue>();
+        var start = Next(); // consume start-token
+        var startIndex = start.Index;
+        if (!start.IsEqual(_input, startToken)) throw new Exception($"Expected {startToken} but got {start}");
+
         while (_position < _tokens.Count)
         {
             var token = Peek();
-            if (token.Value(_input).CompareTo(stop, StringComparison.InvariantCulture) == 0)
+            if (token.IsEqual(_input, stopToken))
             {
-                Next(); // consume ")" token
-                return new MalValue.List(values);
+                Next(); // consume stop-token
+                return list;
             }
             else // process more items
             {
-                values.Add(ReadForm());
+                list.Add(ReadForm());
             }
         }
 
-        return new MalValue.Error($"unmatched {stop} at position", _position);
+        throw new Exception($"Unmatched {startToken} at index: {startIndex}");
+    }
+
+    private IDictionary<MalValue,MalValue> ReadHashMap(string startToken, string stopToken)
+    {
+        var map = new Dictionary<MalValue, MalValue>();
+        var start = Next(); // consume start-token
+        var startIndex = start.Index;
+        if (!start.IsEqual(_input, startToken)) throw new Exception($"Expected {startToken} but got {start}");
+
+        while (_position < _tokens.Count)
+        {
+            var token = Peek();
+            if (token.IsEqual(_input, stopToken))
+            {
+                Next(); // consume stop-token
+                return map;
+            }
+            else // process more items
+            {
+                // TODO: this is too broad, only string, symbol, and number values should be used as keys
+                map.Add(ReadForm(), ReadForm());
+            }
+        }
+
+        throw new Exception($"Unmatched {startToken} at index: {startIndex}");
     }
 }

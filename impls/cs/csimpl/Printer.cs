@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace csimpl;
+﻿namespace csimpl;
 
 internal class Printer
 {
@@ -14,6 +7,8 @@ internal class Printer
         return value switch
         {
             MalValue.List(var items) => $"({string.Join(' ', items.Select(Print))})",
+            MalValue.Vector(var items) => $"[{string.Join(' ', items.Select(Print))}]",
+            MalValue.HashMap(var items) => $"{{{string.Join(' ', items.SelectMany(kvp => new[] { Print(kvp.Value), Print(kvp.Key)}))}}}",
             MalValue.Number(var number) => $"{number}",
             MalValue.Atom(var symbol) => $"{symbol}",
             var oops => oops?.ToString() ?? "null value internal reader error"

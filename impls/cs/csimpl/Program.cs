@@ -27,7 +27,14 @@ internal class Program
 
         while (true)
         {
-            Console.WriteLine(Print(Eval(Read())));
+            try
+            {
+                Console.WriteLine(Print(Eval(Read())));
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine($"Internal exception: \n{e}");
+            }
         }
 
         Console.WriteLine("exiting");
