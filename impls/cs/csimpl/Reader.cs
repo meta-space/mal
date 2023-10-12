@@ -1,5 +1,4 @@
-﻿using System.Buffers;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 
 namespace csimpl;
@@ -107,7 +106,7 @@ internal ref struct Reader
         var list = new List<MalValue>();
         var start = Next(); // consume start-token
         var startIndex = start.Index;
-        if (!start.IsEqual(_input, startToken)) throw new Exception($"Expected {startToken} but got {start}");
+        if (!start.IsEqual(_input, startToken)) throw new MalSyntaxException($"Expected {startToken} but got {start}");
 
         while (_position < _tokens.Count)
         {
@@ -123,7 +122,7 @@ internal ref struct Reader
             }
         }
 
-        throw new Exception($"Unmatched {startToken} at index: {startIndex}");
+        throw new MalSyntaxException($"Unmatched {startToken} at index: {startIndex}");
     }
 
     private IDictionary<MalValue,MalValue> ReadHashMap(string startToken, string stopToken)
@@ -131,7 +130,7 @@ internal ref struct Reader
         var map = new Dictionary<MalValue, MalValue>();
         var start = Next(); // consume start-token
         var startIndex = start.Index;
-        if (!start.IsEqual(_input, startToken)) throw new Exception($"Expected {startToken} but got {start}");
+        if (!start.IsEqual(_input, startToken)) throw new MalSyntaxException($"Expected {startToken} but got {start}");
 
         while (_position < _tokens.Count)
         {
@@ -143,11 +142,11 @@ internal ref struct Reader
             }
             else // process more items
             {
-                // TODO: this is too broad, only string, symbol, and number values should be used as keys
+                // TODO: this is too broad; only string, symbol, and number values should be used as keys
                 map.Add(ReadForm(), ReadForm());
             }
         }
 
-        throw new Exception($"Unmatched {startToken} at index: {startIndex}");
+        throw new MalSyntaxException($"Unmatched {startToken} at index: {startIndex}");
     }
 }
