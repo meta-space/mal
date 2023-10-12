@@ -15,6 +15,8 @@ internal class Program
         {
             MalValue.List { Items.Count: 0 } => input,
             MalValue.List items => Apply(items, env),
+            MalValue.Vector vect => EvalAst(vect, env),
+            MalValue.HashMap map => EvalAst(map, env),
             //var anyOther => EvalAst(anyOther, env)
             var any => any 
         };
@@ -34,7 +36,8 @@ internal class Program
         {
             MalValue.Atom atom => env.Lookup(atom.Symbol),
             MalValue.List list => new MalValue.List(list.Select(i => Eval(i, env)).ToList()),
-            MalValue.Vector vect => new MalValue.List(vect.Items.Select(i => Eval(i, env)).ToList()),
+            MalValue.Vector vect => new MalValue.Vector(vect.Items.Select(i => Eval(i, env)).ToList()),
+            MalValue.HashMap map => new MalValue.HashMap(map.Items.ToDictionary(kvp => kvp.Key, kvp => Eval(kvp.Value, env))),
             var any => any 
         };
     }
