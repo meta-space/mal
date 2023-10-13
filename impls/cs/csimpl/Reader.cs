@@ -80,22 +80,21 @@ internal ref struct Reader
             var input when input.StartsWith("[") => new MalValue.Vector(ReadList("[", "]")),
             var input when input.StartsWith("{") => new MalValue.HashMap(ReadHashMap("{", "}")),
             var input when input.StartsWith("\"") =>new MalValue.String(input.ToString()),
-            _ => ReadAtom()
+            var input when decimal.TryParse(input, out var num) => new MalValue.Number(num),
+            _ => ReadSymbol()
         };
     }
 
-    private MalValue ReadAtom()
+    private MalValue ReadSymbol()
     {
         var token = Next();
-        if (decimal.TryParse(token.Value(_input), out var value))
+        return token.Value(_input) switch
         {
-            return new MalValue.Number(value);
-        }
-        else
-        {
-            return new MalValue.Symbol(token.Value(_input).ToString());
-        }
-
+            "true" => MalValue.True,
+            "false" => MalValue.False,
+            "nil" => MalValue.Nil,
+            var input => new MalValue.Symbol(input.ToString())
+        }; 
     }
 
     private IList<MalValue> ReadList(string startToken, string stopToken)

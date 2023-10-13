@@ -1,10 +1,9 @@
 ﻿
 using System.Collections;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace csimpl;
 
-record class MalValue : IEquatable<MalValue>
+record class MalValue
 {
     public record List(IList<MalValue> Items) : MalValue, IReadOnlyList<MalValue>
     {
@@ -94,7 +93,7 @@ record class MalValue : IEquatable<MalValue>
     }
     public record Symbol(string Value) : MalValue;
 
-    public record Constant(string Value) : MalValue;
+    public record Constant(string Value) : Symbol(Value);
 
     public record String(string Value) : MalValue, IEnumerable<char>
     {
@@ -109,9 +108,9 @@ record class MalValue : IEquatable<MalValue>
         }
     }
 
-    public static readonly Constant Nil = new Constant("Nil");
-    public static readonly Constant True = new Constant("True");
-    public static readonly Constant False = Nil;
+    public static readonly Constant Nil = new Constant("nil");
+    public static readonly Constant True = new Constant("true");
+    public static readonly Constant False = new Constant("false");
 
     public record Number(decimal Value) : MalValue
     {
