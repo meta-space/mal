@@ -2,22 +2,38 @@
 
 internal class Environment
 {
-    private IDictionary<string, MalValue> _env = new Dictionary<string, MalValue>
-    {
-        { "+", new MalValue.Function((args) => (MalValue.Number)args[0] + (MalValue.Number)args[1]) },
-        { "-", new MalValue.Function((args) => (MalValue.Number)args[0] - (MalValue.Number)args[1]) },
-        { "*", new MalValue.Function((args) => (MalValue.Number)args[0] * (MalValue.Number)args[1]) },
-        { "/", new MalValue.Function((args) => (MalValue.Number)args[0] / (MalValue.Number)args[1]) },
-    };
+    private Environment? _outer = null;
+    private IDictionary<MalValue.Symbol, MalValue> _data = new Dictionary<MalValue.Symbol, MalValue>();
 
-    internal MalValue Lookup(string symbol)
+    public Environment(Environment? env = null)
     {
-        if (_env.TryGetValue(symbol, out var value))
+        _outer = env;
+    }
+
+    internal MalValue Get(MalValue.Symbol symbol)
+    {
+        var env = Find(symbol);
+        if (env is null)
         {
-            return value;
+            throw new MalLookupException("symbol lookup error " + symbol);
         }
 
-        throw new MalLookupException("symbol lookup error " + symbol);
+        return env._data[symbol];
+    }
+
+    private Environment? Find(MalValue.Symbol symbol)
+    {
+        return _data.ContainsKey(symbol) ? this : _outer?.Find(symbol);
+    }
+
+    internal void Set(MalValue.Symbol symbol, MalValue value)
+    {
+        _data[symbol] = value;
+    }
+
+    internal void Set(string symbol, MalValue value)
+    {
+        Set(new MalValue.Symbol(symbol), value);
     }
 
 }

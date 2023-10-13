@@ -10,7 +10,8 @@ internal class Printer
             MalValue.Vector(var items) => $"[{string.Join(' ', items.Select(Print))}]",
             MalValue.HashMap(var items) => $"{{{string.Join(' ', items.SelectMany(kvp => new[] { Print(kvp.Key), Print(kvp.Value)}))}}}",
             MalValue.Number(var number) => $"{number}",
-            MalValue.Atom(var symbol) => $"{symbol}",
+            MalValue.String(var str) => $"{str}",
+            MalValue.Symbol(var symbol) => $"{symbol}",
             var oops => oops?.ToString() ?? "null value internal reader error"
         };
     }

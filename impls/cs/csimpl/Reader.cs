@@ -74,17 +74,14 @@ internal ref struct Reader
     private MalValue ReadForm()
     {
         var token = Peek();
-        switch (token.Value(_input))
+        return token.Value(_input) switch
         {
-            case "(":
-                return new MalValue.List(ReadList("(", ")"));
-            case "[":
-                return new MalValue.Vector(ReadList("[", "]"));
-            case "{":
-                return new MalValue.HashMap(ReadHashMap("{", "}"));
-            default:
-                return ReadAtom();
-        }
+            var input when input.StartsWith("(") => new MalValue.List(ReadList("(", ")")),
+            var input when input.StartsWith("[") => new MalValue.Vector(ReadList("[", "]")),
+            var input when input.StartsWith("{") => new MalValue.HashMap(ReadHashMap("{", "}")),
+            var input when input.StartsWith("\"") =>new MalValue.String(input.ToString()),
+            _ => ReadAtom()
+        };
     }
 
     private MalValue ReadAtom()
@@ -96,7 +93,7 @@ internal ref struct Reader
         }
         else
         {
-            return new MalValue.Atom(token.Value(_input).ToString());
+            return new MalValue.Symbol(token.Value(_input).ToString());
         }
 
     }
@@ -125,7 +122,7 @@ internal ref struct Reader
         throw new MalSyntaxException($"Unmatched {startToken} at index: {startIndex}");
     }
 
-    private IDictionary<MalValue,MalValue> ReadHashMap(string startToken, string stopToken)
+    private IReadOnlyDictionary<MalValue,MalValue> ReadHashMap(string startToken, string stopToken)
     {
         var map = new Dictionary<MalValue, MalValue>();
         var start = Next(); // consume start-token

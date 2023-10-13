@@ -4,20 +4,18 @@ using Microsoft.VisualBasic.CompilerServices;
 
 namespace csimpl;
 
-record class MalValue
+record class MalValue : IEquatable<MalValue>
 {
-    public record List(IList<MalValue> Items) : MalValue, IReadOnlyCollection<MalValue>
+    public record List(IList<MalValue> Items) : MalValue, IReadOnlyList<MalValue>
     {
 
         public int Count => Items.Count;
         public bool IsReadOnly => Items.IsReadOnly;
 
         public MalValue this[int index] => Items[index];
-        public List Slice(int start, int length)
-  => new List(Items
-         .Skip(start)
-         .Take(length)
-         .ToList());
+        public List Slice(int start, int length) => new(Items.Skip(start)
+                                                             .Take(length)
+                                                             .ToList());
 
         public IEnumerator<MalValue> GetEnumerator()
         {
@@ -28,39 +26,123 @@ record class MalValue
         {
             return ((IEnumerable)Items).GetEnumerator();
         }
-    }
-    public record Vector(IList<MalValue> Items) : MalValue;
-    public record HashMap(IDictionary<MalValue, MalValue> Items) : MalValue;
-    public record Atom(string Symbol) : MalValue;
 
-    public record Constant(string Name) : MalValue;
+        public List Map(Func<MalValue, MalValue> fn)
+        {
+            return new (Items.Select(fn).ToList());
+        }
+    }
+
+    public record Vector(IList<MalValue> Items) : MalValue, IReadOnlyList<MalValue>
+    {
+        public int Count => Items.Count;
+        public bool IsReadOnly => Items.IsReadOnly;
+
+        public MalValue this[int index] => Items[index];
+        public Vector Slice(int start, int length) => new(Items.Skip(start)
+                                                             .Take(length)
+                                                             .ToList());
+
+        public IEnumerator<MalValue> GetEnumerator()
+        {
+            return Items.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)Items).GetEnumerator();
+        }
+        public Vector Map(Func<MalValue, MalValue> fn)
+        {
+            return new (Items.Select(fn).ToList());
+        }
+    }
+
+    public record HashMap(IReadOnlyDictionary<MalValue, MalValue> Items) : MalValue, IReadOnlyDictionary<MalValue, MalValue>
+    {
+        public int Count => Items.Count;
+
+        public bool ContainsKey(MalValue key)
+        {
+            return Items.ContainsKey(key);
+        }
+
+        public bool TryGetValue(MalValue key, out MalValue value)
+        {
+            return Items.TryGetValue(key, out value);
+        }
+
+        public MalValue this[MalValue key] => Items[key];
+
+        public IEnumerable<MalValue> Keys => Items.Keys;
+
+        public IEnumerable<MalValue> Values => Items.Values;
+
+        public IEnumerator<KeyValuePair<MalValue, MalValue>> GetEnumerator()
+        {
+            return Items.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)Items).GetEnumerator();
+        }
+        public HashMap Map(Func<KeyValuePair<MalValue, MalValue>, MalValue> keySelector, Func<KeyValuePair<MalValue, MalValue>, MalValue> elementSelector)
+        {
+            return new (Items.ToDictionary(keySelector, elementSelector));
+        }
+    }
+    public record Symbol(string Value) : MalValue;
+
+    public record Constant(string Value) : MalValue;
+
+    public record String(string Value) : MalValue, IEnumerable<char>
+    {
+        public IEnumerator<char> GetEnumerator()
+        {
+            return Value.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)Value).GetEnumerator();
+        }
+    }
+
+    public static readonly Constant Nil = new Constant("Nil");
+    public static readonly Constant True = new Constant("True");
+    public static readonly Constant False = Nil;
 
     public record Number(decimal Value) : MalValue
     {
-            //public static Constant operator <(Number a, Number b) {
-            //    return a.Value < b.Value ? True : False;
-            //}
-            //public static Constant operator <=(Number a, Number b) {
-            //    return a.Value <= b.Value ? True : False;
-            //}
-            //public static Constant operator >(Number a, Number b) {
-            //    return a.Value > b.Value ? True : False;
-            //}
-            //public static Constant operator >=(Number a, Number b) {
-            //    return a.Value >= b.Value ? True : False;
-            //}
-            public static Number operator +(Number a, Number b) {
-                return new Number(a.Value + b.Value);
-            }
-            public static Number operator -(Number a, Number b) {
-                return new Number(a.Value - b.Value);
-            }
-            public static Number operator *(Number a, Number b) {
-                return new Number(a.Value * b.Value);
-            }
-            public static Number operator /(Number a, Number b) {
-                return new Number(a.Value / b.Value);
-            }
+        //public static Constant operator <(Number a, Number b) {
+        //    return a.Value < b.Value ? True : False;
+        //}
+        //public static Constant operator <=(Number a, Number b) {
+        //    return a.Value <= b.Value ? True : False;
+        //}
+        //public static Constant operator >(Number a, Number b) {
+        //    return a.Value > b.Value ? True : False;
+        //}
+        //public static Constant operator >=(Number a, Number b) {
+        //    return a.Value >= b.Value ? True : False;
+        //}
+        public static Number operator +(Number a, Number b)
+        {
+            return new Number(a.Value + b.Value);
+        }
+        public static Number operator -(Number a, Number b)
+        {
+            return new Number(a.Value - b.Value);
+        }
+        public static Number operator *(Number a, Number b)
+        {
+            return new Number(a.Value * b.Value);
+        }
+        public static Number operator /(Number a, Number b)
+        {
+            return new Number(a.Value / b.Value);
+        }
     }
 
     public record Function(Func<List, MalValue> Op) : MalValue
