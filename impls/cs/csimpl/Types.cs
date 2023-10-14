@@ -1,22 +1,22 @@
-﻿
-using System.Collections;
+﻿using System.Collections;
 
 namespace csimpl;
 
-record class MalValue
+record class Mal
 {
-    public record List(IList<MalValue> Items) : MalValue, IReadOnlyList<MalValue>
-    {
+    public interface ISequence : IReadOnlyList<Mal> {}
 
+    public sealed record List(IList<Mal> Items) : Mal, ISequence
+    {
         public int Count => Items.Count;
         public bool IsReadOnly => Items.IsReadOnly;
 
-        public MalValue this[int index] => Items[index];
+        public Mal this[int index] => Items[index];
         public List Slice(int start, int length) => new(Items.Skip(start)
                                                              .Take(length)
                                                              .ToList());
 
-        public IEnumerator<MalValue> GetEnumerator()
+        public IEnumerator<Mal> GetEnumerator()
         {
             return Items.GetEnumerator();
         }
@@ -26,23 +26,39 @@ record class MalValue
             return ((IEnumerable)Items).GetEnumerator();
         }
 
-        public List Map(Func<MalValue, MalValue> fn)
+        public List Map(Func<Mal, Mal> fn)
         {
-            return new (Items.Select(fn).ToList());
+            return new(Items.Select(fn).ToList());
+        }
+
+        public bool Equals(List? obj)
+        {
+            //Check for null and compare run-time types.
+            if ((obj is null) || GetType() != obj.GetType())
+            {
+                return false;
+            }
+            List other = (List)obj;
+            return Enumerable.SequenceEqual(Items, other.Items);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(base.GetHashCode(), Items);
         }
     }
 
-    public record Vector(IList<MalValue> Items) : MalValue, IReadOnlyList<MalValue>
+    public record Vector(IList<Mal> Items) : Mal, ISequence
     {
         public int Count => Items.Count;
         public bool IsReadOnly => Items.IsReadOnly;
 
-        public MalValue this[int index] => Items[index];
+        public Mal this[int index] => Items[index];
         public Vector Slice(int start, int length) => new(Items.Skip(start)
                                                              .Take(length)
                                                              .ToList());
 
-        public IEnumerator<MalValue> GetEnumerator()
+        public IEnumerator<Mal> GetEnumerator()
         {
             return Items.GetEnumerator();
         }
@@ -51,33 +67,34 @@ record class MalValue
         {
             return ((IEnumerable)Items).GetEnumerator();
         }
-        public Vector Map(Func<MalValue, MalValue> fn)
+        public Vector Map(Func<Mal, Mal> fn)
         {
-            return new (Items.Select(fn).ToList());
+            return new(Items.Select(fn).ToList());
         }
+
     }
 
-    public record HashMap(IReadOnlyDictionary<MalValue, MalValue> Items) : MalValue, IReadOnlyDictionary<MalValue, MalValue>
+    public record HashMap(IReadOnlyDictionary<Mal, Mal> Items) : Mal, IReadOnlyDictionary<Mal, Mal>
     {
         public int Count => Items.Count;
 
-        public bool ContainsKey(MalValue key)
+        public bool ContainsKey(Mal key)
         {
             return Items.ContainsKey(key);
         }
 
-        public bool TryGetValue(MalValue key, out MalValue value)
+        public bool TryGetValue(Mal key, out Mal value)
         {
             return Items.TryGetValue(key, out value);
         }
 
-        public MalValue this[MalValue key] => Items[key];
+        public Mal this[Mal key] => Items[key];
 
-        public IEnumerable<MalValue> Keys => Items.Keys;
+        public IEnumerable<Mal> Keys => Items.Keys;
 
-        public IEnumerable<MalValue> Values => Items.Values;
+        public IEnumerable<Mal> Values => Items.Values;
 
-        public IEnumerator<KeyValuePair<MalValue, MalValue>> GetEnumerator()
+        public IEnumerator<KeyValuePair<Mal, Mal>> GetEnumerator()
         {
             return Items.GetEnumerator();
         }
@@ -86,16 +103,16 @@ record class MalValue
         {
             return ((IEnumerable)Items).GetEnumerator();
         }
-        public HashMap Map(Func<KeyValuePair<MalValue, MalValue>, MalValue> keySelector, Func<KeyValuePair<MalValue, MalValue>, MalValue> elementSelector)
+        public HashMap Map(Func<KeyValuePair<Mal, Mal>, Mal> keySelector, Func<KeyValuePair<Mal, Mal>, Mal> elementSelector)
         {
-            return new (Items.ToDictionary(keySelector, elementSelector));
+            return new(Items.ToDictionary(keySelector, elementSelector));
         }
     }
-    public record Symbol(string Value) : MalValue;
+    public record Symbol(string Value) : Mal;
 
     public record Constant(string Value) : Symbol(Value);
 
-    public record String(string Value) : MalValue, IEnumerable<char>
+    public record String(string Value) : Mal, IEnumerable<char>
     {
         public IEnumerator<char> GetEnumerator()
         {
@@ -108,24 +125,28 @@ record class MalValue
         }
     }
 
-    public static readonly Constant Nil = new Constant("nil");
-    public static readonly Constant True = new Constant("true");
-    public static readonly Constant False = new Constant("false");
+    public static readonly Constant Nil = new("nil");
+    public static readonly Constant True = new("true");
+    public static readonly Constant False = new("false");
 
-    public record Number(decimal Value) : MalValue
+    public record Number(decimal Value) : Mal
     {
-        //public static Constant operator <(Number a, Number b) {
-        //    return a.Value < b.Value ? True : False;
-        //}
-        //public static Constant operator <=(Number a, Number b) {
-        //    return a.Value <= b.Value ? True : False;
-        //}
-        //public static Constant operator >(Number a, Number b) {
-        //    return a.Value > b.Value ? True : False;
-        //}
-        //public static Constant operator >=(Number a, Number b) {
-        //    return a.Value >= b.Value ? True : False;
-        //}
+        public static Constant operator <(Number a, Number b)
+        {
+            return a.Value < b.Value ? True : False;
+        }
+        public static Constant operator <=(Number a, Number b)
+        {
+            return a.Value <= b.Value ? True : False;
+        }
+        public static Constant operator >(Number a, Number b)
+        {
+            return a.Value > b.Value ? True : False;
+        }
+        public static Constant operator >=(Number a, Number b)
+        {
+            return a.Value >= b.Value ? True : False;
+        }
         public static Number operator +(Number a, Number b)
         {
             return new Number(a.Value + b.Value);
@@ -144,14 +165,9 @@ record class MalValue
         }
     }
 
-    public record Function(Func<List, MalValue> Op) : MalValue
-    {
-    }
+    public record Function(Func<List, Mal> Op) : Mal;
 
-
-
-    private MalValue() { } // private constructor can prevent derived cases from being defined elsewhere
-
+    private Mal() { } // private constructor can prevent derived cases from being defined elsewhere
 }
 
 public class MalSyntaxException : Exception

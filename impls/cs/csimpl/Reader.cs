@@ -65,41 +65,48 @@ internal ref struct Reader
         }
     }
 
-    public static MalValue ReadStr(string input)
+    public static Mal ReadStr(string input)
     {
         var reader = new Reader(input);
         return reader.ReadForm();
     }
 
-    private MalValue ReadForm()
+    private Mal ReadForm()
     {
         var token = Peek();
         return token.Value(_input) switch
         {
-            var input when input.StartsWith("(") => new MalValue.List(ReadList("(", ")")),
-            var input when input.StartsWith("[") => new MalValue.Vector(ReadList("[", "]")),
-            var input when input.StartsWith("{") => new MalValue.HashMap(ReadHashMap("{", "}")),
-            var input when input.StartsWith("\"") =>new MalValue.String(input.ToString()),
-            var input when decimal.TryParse(input, out var num) => new MalValue.Number(num),
+            var input when input.StartsWith("(") => new Mal.List(ReadList("(", ")")),
+            var input when input.StartsWith("[") => new Mal.Vector(ReadList("[", "]")),
+            var input when input.StartsWith("{") => ReadHashMap("{", "}"),
+            var input when input.StartsWith("\"") => ReadString(),
             _ => ReadSymbol()
         };
     }
 
-    private MalValue ReadSymbol()
+    private Mal.String ReadString()
+    {
+        var token = Next();
+        var input = token.Value(_input).ToString();
+        return new Mal.String(input);
+    }
+
+    private Mal ReadSymbol()
     {
         var token = Next();
         return token.Value(_input) switch
         {
-            "true" => MalValue.True,
-            "false" => MalValue.False,
-            "nil" => MalValue.Nil,
-            var input => new MalValue.Symbol(input.ToString())
+            "true" => Mal.True,
+            "false" => Mal.False,
+            "nil" => Mal.Nil,
+            var input when decimal.TryParse(input, out var num) => new Mal.Number(num),
+            var input => new Mal.Symbol(input.ToString())
         }; 
     }
 
-    private IList<MalValue> ReadList(string startToken, string stopToken)
+    private IList<Mal> ReadList(string startToken, string stopToken)
     {
-        var list = new List<MalValue>();
+        var list = new List<Mal>();
         var start = Next(); // consume start-token
         var startIndex = start.Index;
         if (!start.IsEqual(_input, startToken)) throw new MalSyntaxException($"Expected {startToken} but got {start}");
@@ -121,9 +128,9 @@ internal ref struct Reader
         throw new MalSyntaxException($"Unmatched {startToken} at index: {startIndex}");
     }
 
-    private IReadOnlyDictionary<MalValue,MalValue> ReadHashMap(string startToken, string stopToken)
+    private Mal.HashMap ReadHashMap(string startToken, string stopToken)
     {
-        var map = new Dictionary<MalValue, MalValue>();
+        var map = new Dictionary<Mal, Mal>();
         var start = Next(); // consume start-token
         var startIndex = start.Index;
         if (!start.IsEqual(_input, startToken)) throw new MalSyntaxException($"Expected {startToken} but got {start}");
@@ -134,7 +141,7 @@ internal ref struct Reader
             if (token.IsEqual(_input, stopToken))
             {
                 Next(); // consume stop-token
-                return map;
+                return new Mal.HashMap(map);
             }
             else // process more items
             {

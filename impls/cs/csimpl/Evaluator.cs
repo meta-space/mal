@@ -2,54 +2,75 @@
 
 internal class Evaluator
 {
-    private static MalValue EvalAst(MalValue ast, Environment env)
+    internal static Mal Eval(Mal ast, Environment env)
     {
         return ast switch
         {
-            MalValue.Constant constant => constant,
-            MalValue.Symbol symbol => env.Get(symbol),
-            MalValue.List list => list.Map(i => Eval(i, env)),
-            MalValue.Vector vec => vec.Map(i => Eval(i, env)),
-            MalValue.HashMap dict => dict.Map(kvp => kvp.Key, kvp => Eval(kvp.Value, env)),
-            var any => any 
-        };
-    }
-
-    internal static MalValue Eval(MalValue ast, Environment env)
-    {
-        return ast switch
-        {
-            MalValue.List { Items.Count: 0 } => ast,
-            MalValue.List items => Apply(items, env),
-            MalValue.Vector vec => EvalAst(vec, env),
-            MalValue.HashMap map => EvalAst(map, env),
+            Mal.List { Items.Count: 0 } => ast,
+            Mal.List items => Apply(items, env),
+            Mal.Vector vec => EvalAst(vec, env),
+            Mal.HashMap map => EvalAst(map, env),
             var anyOther => EvalAst(anyOther, env)
         };
     }
 
-    private static MalValue Apply(MalValue.List items, Environment env)
+    private static Mal EvalAst(Mal ast, Environment env)
     {
-        var symbol = (MalValue.Symbol)(items[0]);
+        return ast switch
+        {
+            Mal.Constant constant => constant,
+            Mal.Symbol symbol => env.Get(symbol),
+            Mal.List list => list.Map(i => Eval(i, env)),
+            Mal.Vector vec => vec.Map(i => Eval(i, env)),
+            Mal.HashMap dict => dict.Map(kvp => kvp.Key, kvp => Eval(kvp.Value, env)),
+            var any => any 
+        };
+    }
+
+    private static Mal Apply(Mal.List ast, Environment env)
+    {
+        if (ast[0] is Mal.List list)
+        {
+            var lambda = Apply(list, env) as Mal.Function;
+            return lambda.Op((Mal.List)EvalAst(ast[1..], env));
+        }
+
+        var symbol = (Mal.Symbol)(ast[0]);
         switch (symbol.Value) {
             case "def!":
-                var name = (MalValue.Symbol)items[1];
-                var value = Eval(items[2], env);
+                var name = (Mal.Symbol)ast[1];
+                var value = Eval(ast[2], env);
                 env.Set(name, value);
                 return value;
             case "let*":
-                var a1 = (IReadOnlyList<MalValue>)items[1];
-                var a2 = items[2];
-                Environment let_env = new(env);
-                for(int i=0; i<a1.Count; i+=2) {
-                    var key = (MalValue.Symbol)a1[i];
-                    var val = a1[i+1];
-                    let_env.Set(key, Eval(val, let_env));
+                var lets = (Mal.ISequence)ast[1];
+                var final = ast[2];
+                Environment letEnv = new(env);
+                for(int i=0; i<lets.Count; i+=2) {
+                    var key = (Mal.Symbol)lets[i];
+                    var val = lets[i+1];
+                    letEnv.Set(key, Eval(val, letEnv));
                 }
-                return Eval(a2, let_env);
+                return Eval(final, letEnv);
+            case "do":
+                var dos = (Mal.ISequence)ast[1..];
+                return dos.Select(s => Eval(s, env)).Last();
+            case "if":
+                var condition = ast[1];
+                var consequent = ast[2];
+                var alternative = (ast.Count > 3) ? ast[3] : Mal.Nil;
+                var res = Eval(condition, env);
+                var isTrue = !(res == Mal.Nil || res == Mal.False);
+                return Eval(isTrue ? consequent : alternative, env); 
+            case "fn*":
+                var binds = (Mal.List)ast[1];
+                var body = ast[2];
+                return new Mal.Function(args =>  Eval(body, new Environment(env, binds.OfType<Mal.Symbol>().ToList(), args)));
+                
             default: // function call
-            var fn = (MalValue.Function)env.Get(symbol);
-            var result = fn.Op((MalValue.List)EvalAst(items[1..], env));
-            return result;
+                var fn = (Mal.Function)env.Get(symbol);
+                var result = fn.Op((Mal.List)EvalAst(ast[1..], env));
+                return result;
         }
     }
 }

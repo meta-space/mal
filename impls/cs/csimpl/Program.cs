@@ -3,18 +3,18 @@ namespace csimpl;
 
 internal class Program
 {
-    static MalValue Read()
+    static Mal Read()
     {
         string input = ReadLine.Read("user> ");
         return Reader.ReadStr(input);
     }
 
-    static MalValue Eval(MalValue ast, Environment env)
+    static Mal Eval(Mal ast, Environment env)
     {
         return Evaluator.Eval(ast, env);
     }
 
-    static string Print(MalValue value)
+    static string Print(Mal value)
     {
        return Printer.Print(value);
     }
@@ -26,10 +26,7 @@ internal class Program
         ReadLine.GetHistory();
 
         var env = new Environment();
-        env.Set("+", new MalValue.Function(args => (MalValue.Number)args[0] + (MalValue.Number)args[1]));
-        env.Set("-", new MalValue.Function(args => (MalValue.Number)args[0] - (MalValue.Number)args[1]));
-        env.Set("*", new MalValue.Function(args => (MalValue.Number)args[0] * (MalValue.Number)args[1]));
-        env.Set("/", new MalValue.Function(args => (MalValue.Number)args[0] / (MalValue.Number)args[1]));
+        Core.Init(env);
 
         while (true)
         {
