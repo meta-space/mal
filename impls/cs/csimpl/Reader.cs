@@ -104,7 +104,7 @@ internal ref struct Reader
         }; 
     }
 
-    private IList<Mal> ReadList(string startToken, string stopToken)
+    private IReadOnlyList<Mal> ReadList(string startToken, string stopToken)
     {
         var list = new List<Mal>();
         var start = Next(); // consume start-token

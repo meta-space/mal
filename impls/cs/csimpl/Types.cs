@@ -1,21 +1,23 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 
 namespace csimpl;
 
 record class Mal
 {
-    public interface ISequence : IReadOnlyList<Mal> {}
+    public interface ISequence : IReadOnlyList<Mal>
+    {
+    }
 
-    public sealed record List(IList<Mal> Items) : Mal, ISequence
+    public sealed record List(IReadOnlyList<Mal> Items) : Mal, ISequence
     {
         public int Count => Items.Count;
-        public bool IsReadOnly => Items.IsReadOnly;
 
         public Mal this[int index] => Items[index];
-        public List Slice(int start, int length) => new(Items.Skip(start)
-                                                             .Take(length)
-                                                             .ToList());
 
+        public List Slice(int start, int length) => new(this.Skip(start)
+                                                            .Take(length)
+                                                            .ToList());
         public IEnumerator<Mal> GetEnumerator()
         {
             return Items.GetEnumerator();
@@ -38,7 +40,7 @@ record class Mal
             {
                 return false;
             }
-            List other = (List)obj;
+            List other = obj;
             return Enumerable.SequenceEqual(Items, other.Items);
         }
 
@@ -48,10 +50,9 @@ record class Mal
         }
     }
 
-    public record Vector(IList<Mal> Items) : Mal, ISequence
+    public sealed record Vector(IReadOnlyList<Mal> Items) : Mal, ISequence
     {
         public int Count => Items.Count;
-        public bool IsReadOnly => Items.IsReadOnly;
 
         public Mal this[int index] => Items[index];
         public Vector Slice(int start, int length) => new(Items.Skip(start)
@@ -70,6 +71,23 @@ record class Mal
         public Vector Map(Func<Mal, Mal> fn)
         {
             return new(Items.Select(fn).ToList());
+        } 
+        
+        
+        public bool Equals(Vector? obj)
+        {
+            //Check for null and compare run-time types.
+            if ((obj is null) || GetType() != obj.GetType())
+            {
+                return false;
+            }
+            Vector other = obj;
+            return Enumerable.SequenceEqual(Items, other.Items);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(base.GetHashCode(), Items);
         }
 
     }
@@ -108,10 +126,14 @@ record class Mal
             return new(Items.ToDictionary(keySelector, elementSelector));
         }
     }
+
+    [DebuggerDisplay("Symbol: {Value}")]
     public record Symbol(string Value) : Mal;
 
+    [DebuggerDisplay("Constant: {Value}")]
     public record Constant(string Value) : Symbol(Value);
 
+    [DebuggerDisplay("\"{Value}\"")]
     public record String(string Value) : Mal, IEnumerable<char>
     {
         public IEnumerator<char> GetEnumerator()
@@ -129,6 +151,7 @@ record class Mal
     public static readonly Constant True = new("true");
     public static readonly Constant False = new("false");
 
+    [DebuggerDisplay("{Value}")]
     public record Number(decimal Value) : Mal
     {
         public static Constant operator <(Number a, Number b)
@@ -165,21 +188,28 @@ record class Mal
         }
     }
 
-    public record Function(Func<List, Mal> Op) : Mal;
+    public record Function(Func<List, Mal> Op) : Mal
+    {
+    }
+
+    public record Closure(List Parameters, Mal Ast, Environment Env, Func<List,Mal> Fn) : Function(Fn)
+    {
+    }
 
     private Mal() { } // private constructor can prevent derived cases from being defined elsewhere
 }
 
+public class MalRuntimeException : Exception
+{
+    public MalRuntimeException(string message) : base(message) { }
+}
+
 public class MalSyntaxException : Exception
 {
-    public MalSyntaxException(string message) : base(message)
-    {
-    }
+    public MalSyntaxException(string message) : base(message) { }
 }
 
 public class MalLookupException : Exception
 {
-    public MalLookupException(string message) : base(message)
-    {
-    }
+    public MalLookupException(string message) : base(message) { }
 }
