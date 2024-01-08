@@ -36,7 +36,7 @@ internal class Evaluator
                             ast = final;
                             continue;
                         case "do":
-                            var statements = items[1..^1];
+                            var statements = items[1..];
                             statements.Select(s => Eval(s, env));
                             ast = statements[^1];
                             continue;

@@ -9,6 +9,7 @@ record class Mal
     {
     }
 
+    [DebuggerDisplay("({Items})")]
     public sealed record List(IReadOnlyList<Mal> Items) : Mal, ISequence
     {
         public int Count => Items.Count;

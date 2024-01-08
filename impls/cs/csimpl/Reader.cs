@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace csimpl;
@@ -31,7 +32,7 @@ internal ref struct Reader
     private readonly Collection<Token> _tokens = new();
     private int _position = 0;
 
-    public Reader(ReadOnlySpan<char> input)
+    private Reader(ReadOnlySpan<char> input)
     {
         _input = input;
         Tokenize(_input);
@@ -79,16 +80,32 @@ internal ref struct Reader
             var input when input.StartsWith("(") => new Mal.List(ReadList("(", ")")),
             var input when input.StartsWith("[") => new Mal.Vector(ReadList("[", "]")),
             var input when input.StartsWith("{") => ReadHashMap("{", "}"),
-            var input when input.StartsWith("\"") => ReadString(),
+            var input when input.StartsWith("\"") => ReadStringInternal(),
             _ => ReadSymbol()
         };
+    }
+
+    private Mal.String ReadStringInternal()
+    {
+        var token = Next();
+        var input = token.Value(_input).ToString();
+        return new Mal.String(input.Substring(1, input.Length-2));
     }
 
     private Mal.String ReadString()
     {
         var token = Next();
         var input = token.Value(_input).ToString();
-        return new Mal.String(input);
+        return new Mal.String(UnEscape(input));
+    }
+
+    private static string UnEscape(string input)
+    {
+         return input.Substring(1, input.Length-2)
+                    //.Replace(@"\\",   "\u029e")
+                    .Replace("\"", "")
+                    .Replace(@"\n",    "\n")
+                    .Replace("\u029e", "\\");
     }
 
     private Mal ReadSymbol()
@@ -101,7 +118,7 @@ internal ref struct Reader
             "nil" => Mal.Nil,
             var input when decimal.TryParse(input, out var num) => new Mal.Number(num),
             var input => new Mal.Symbol(input.ToString())
-        }; 
+        };
     }
 
     private IReadOnlyList<Mal> ReadList(string startToken, string stopToken)
