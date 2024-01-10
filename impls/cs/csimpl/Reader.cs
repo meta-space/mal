@@ -75,12 +75,13 @@ internal ref struct Reader
     private Mal ReadForm()
     {
         var token = Peek();
-        return token.Value(_input) switch
+        var input = token.Value(_input);
+        return input switch
         {
-            var input when input.StartsWith("(") => new Mal.List(ReadList("(", ")")),
-            var input when input.StartsWith("[") => new Mal.Vector(ReadList("[", "]")),
-            var input when input.StartsWith("{") => ReadHashMap("{", "}"),
-            var input when input.StartsWith("\"") => ReadStringInternal(),
+            var value when value.StartsWith("(") => new Mal.List(ReadList("(", ")")),
+            var value when value.StartsWith("[") => new Mal.Vector(ReadList("[", "]")),
+            var value when value.StartsWith("{") => ReadHashMap("{", "}"),
+            var value when value.StartsWith("\"") => ReadStringInternal(),
             _ => ReadSymbol()
         };
     }
@@ -89,6 +90,7 @@ internal ref struct Reader
     {
         var token = Next();
         var input = token.Value(_input).ToString();
+        return new Mal.String(UnEscape(input));
         return new Mal.String(input.Substring(1, input.Length-2));
     }
 
@@ -96,28 +98,31 @@ internal ref struct Reader
     {
         var token = Next();
         var input = token.Value(_input).ToString();
+        return new Mal.String(input);
         return new Mal.String(UnEscape(input));
     }
 
     private static string UnEscape(string input)
     {
-         return input.Substring(1, input.Length-2)
+         var value = input.Substring(1, input.Length-2)
                     //.Replace(@"\\",   "\u029e")
-                    .Replace("\"", "")
-                    .Replace(@"\n",    "\n")
+                    .Replace("\\\"", "\"")
+                    .Replace(@"\\n",    "\n")
                     .Replace("\u029e", "\\");
+         return value;
     }
 
     private Mal ReadSymbol()
     {
         var token = Next();
-        return token.Value(_input) switch
+        var input = token.Value(_input);
+        return input switch
         {
             "true" => Mal.True,
             "false" => Mal.False,
             "nil" => Mal.Nil,
-            var input when decimal.TryParse(input, out var num) => new Mal.Number(num),
-            var input => new Mal.Symbol(input.ToString())
+            var value when decimal.TryParse(value, out var num) => new Mal.Number(num),
+            var value => new Mal.Symbol(value.ToString())
         };
     }
 
