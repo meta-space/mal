@@ -36,8 +36,7 @@ internal class Evaluator
                             ast = final;
                             continue;
                         case "do":
-                            var statements = items[1..];
-                            statements.Select(s => Eval(s, env));
+                            var statements = items[1..].Select(s => Eval(s, env)).ToList();
                             ast = statements[^1];
                             continue;
                         case "if":
@@ -54,7 +53,7 @@ internal class Evaluator
                             ast = new Mal.Closure(param, body, env, args => Mal.Nil);
                             continue;
                         default: // function call
-                            var fn = EvalAst(items[0], env);
+                            var fn = Eval(items[0], env);
                             var args = (Mal.List)EvalAst(items[1..], env);
 
                             if (fn is Mal.Closure closure)

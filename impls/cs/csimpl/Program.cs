@@ -29,7 +29,7 @@ internal class Program
         Core.Init(env);
 
         Evaluator.Eval(Reader.ReadStr("(def! not (fn* (a) (if a false true)))"), env);
-        Evaluator.Eval(Reader.ReadStr("(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \"\nnil)\")))))"), env);
+        Evaluator.Eval(Reader.ReadStr("(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \" \n nil)\")))))" ), env);
 
         while (true)
         {

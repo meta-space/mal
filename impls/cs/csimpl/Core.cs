@@ -56,6 +56,6 @@ internal class Core
            env.Set(keyValuePair.Key, keyValuePair.Value);   
         }
         // finally: eval
-        env.Set("eval", new Mal.Function(args => Evaluator.Eval(args, env)));
+        env.Set("eval", new Mal.Function(args => Evaluator.Eval(args[0], env)));
     }
 }
