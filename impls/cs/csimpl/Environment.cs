@@ -16,6 +16,13 @@ internal class Environment
         _outer = env;
         for (var i = 0; i < binds.Count; i++)
         {
+            // consume all remaining exprs
+            if (binds[i].Value == "&")
+            {
+                Set(binds[i + 1], new Mal.List(exprs.Skip(i).Take(exprs.Count - 1).ToList()));
+                return;
+            }
+
             Set(binds[i], exprs[i]);
         }
 
