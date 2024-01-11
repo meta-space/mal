@@ -25,6 +25,23 @@ internal class Core
     });
     private static readonly Mal.Function Slurp = new(args => args[0] is Mal.String str ? new Mal.String(File.ReadAllText(str.Value)) : Mal.Nil);
     private static readonly Mal.Function ReadString = new(args => args[0] is Mal.String str ? Reader.ReadStr(str.Value) : Mal.Nil);
+    private static readonly Mal.Function Atom = new(args => new Mal.Atom(new Mal.A(args[0])));
+    private static readonly Mal.Function IsAtom = new(args => (args[0] is Mal.Atom) ? Mal.True : Mal.False);
+    private static readonly Mal.Function Deref = new(args => (args[0] as Mal.Atom)?.Value ?? Mal.Nil);
+    private static readonly Mal.Function Reset = new(args =>
+    {
+        if (args[0] is not Mal.Atom atom) return Mal.Nil;
+        atom.Value = args[1];
+        return atom.Value;
+    });
+    //private static readonly Mal.Function Swap = new(args =>
+    //{
+    //    var atom = args[0] as Mal.Atom;
+    //    var fn = args[1] as Mal.Function;
+    //    var rest = args[2..];
+    //    atom.Value = fn?.Op(rest);
+    //    return atom.Value;
+    //});
 
     private static readonly Dictionary<string, Mal.Function> Ns = new ()
     {
@@ -47,6 +64,11 @@ internal class Core
         { ">=", IsGreaterEqual },
         { "slurp", Slurp },
         { "read-string", ReadString },
+        { "atom", Atom },
+        { "atom?", IsAtom },
+        { "deref", Deref },
+        { "reset!", Reset },
+        //{ "swap!", Swap }
     };
 
     internal static void Init(Environment env)

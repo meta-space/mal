@@ -148,6 +148,26 @@ record class Mal
         }
     }
 
+    internal class A
+    {
+        internal A(Mal value)
+        {
+            Value = value;
+        }
+
+        internal Mal Value { get; set; }
+    }
+
+    [DebuggerDisplay("<{Value}>")]
+    public  record Atom(A R) : Mal
+    {
+        public Mal Value
+        {
+            get => R.Value;
+            set => R.Value = value;
+        } 
+    }
+
     public static readonly Constant Nil = new("nil");
     public static readonly Constant True = new("true");
     public static readonly Constant False = new("false");

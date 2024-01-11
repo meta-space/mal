@@ -15,6 +15,7 @@ internal class Printer
             Mal.String(var s) when !isHumanReadable => isInternal ? s : $"\"{s}\"",
             Mal.String(var s) when isHumanReadable => Escape(s),
             Mal.Symbol(var s) => $"{s}",
+            Mal.Atom(var a) => $"(atom {Print(a.Value)})",
             Mal.Function(_) => "#<function>",
             var oops => oops?.ToString() ?? "null value internal reader error"
         };
