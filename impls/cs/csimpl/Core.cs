@@ -2,7 +2,7 @@
 
 internal class Core
 {
-    private static readonly Mal.Function ToList =  new(args => new Mal.List(args.Items));
+    private static readonly Mal.Function ToList =  new(args => new Mal.List(args));
     private static readonly Mal.Function IsList =  new(args => args[0] is Mal.ISequence ? Mal.True : Mal.Nil);
     private static readonly Mal.Function IsEmpty = new(args => args is [Mal.ISequence { Count: 0}] ? Mal.True : Mal.False);
     private static readonly Mal.Function Count =   new(args => new Mal.Number(args is [Mal.ISequence seq] ? seq.Count : 0));

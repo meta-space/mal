@@ -7,6 +7,7 @@ record class Mal
 {
     public interface ISequence : IReadOnlyList<Mal>
     {
+       // IReadOnlyList<Mal> Items => this;
     }
 
     [DebuggerDisplay("({Items})")]
@@ -209,11 +210,11 @@ record class Mal
         }
     }
 
-    public record Function(Func<List, Mal> Op) : Mal
+    public record Function(Func<ISequence, Mal> Op) : Mal
     {
     }
 
-    public record Closure(List Parameters, Mal Ast, Environment Env, Func<List,Mal> Fn) : Function(Fn)
+    public record Closure(ISequence Parameters, Mal Ast, Environment Env, Func<ISequence,Mal> Fn) : Function(Fn)
     {
     }
 

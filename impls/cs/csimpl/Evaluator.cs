@@ -48,13 +48,13 @@ internal class Evaluator
                             ast = isTrue ? consequent : alternative;
                             continue;
                         case "fn*":
-                            var param = (Mal.List)items[1];
+                            var param = (Mal.ISequence)items[1];
                             var body = items[2];
                             ast = new Mal.Closure(param, body, env, args => Mal.Nil);
                             continue;
                         default: // function call
                             var fn = Eval(items[0], env);
-                            var args = (Mal.List)EvalAst(items[1..], env);
+                            var args = (Mal.ISequence)EvalAst(items[1..], env);
 
                             if (fn is Mal.Closure closure)
                             {

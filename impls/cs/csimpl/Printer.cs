@@ -21,7 +21,7 @@ internal class Printer
         };
     }
 
-    internal static Mal.String PrnStr(Mal.List value, string separator, bool isHumanReadable)
+    internal static Mal.String PrnStr(Mal.ISequence value, string separator, bool isHumanReadable)
     {
         var str = string.Join(separator, value.Select(v => Print(v, isHumanReadable, true)));
         return new Mal.String(str);
