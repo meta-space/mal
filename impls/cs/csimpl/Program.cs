@@ -28,8 +28,16 @@ internal class Program
         var env = new Environment();
         Core.Init(env);
 
-        Evaluator.Eval(Reader.ReadStr("(def! not (fn* (a) (if a false true)))"), env);
-        Evaluator.Eval(Reader.ReadStr("(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \" \n nil)\")))))" ), env);
+        Evaluator.Eval(Reader.ReadStr(@"
+                (def! not (fn* (a) 
+                            (if a false true)))"), env);
+        Evaluator.Eval(Reader.ReadStr(@"
+                (def! load-file (fn* (f) 
+                                  (eval (read-string (str ""(do "" (slurp f) "" \n nil)"")))))" ), env);
+        Evaluator.Eval(Reader.ReadStr(@"
+                (def! swap! (fn* (atom mutate & rest)
+                                  (let* (value (deref atom))
+                                     (if value (mutate value rest))))))"), env);
 
         while (true)
         {

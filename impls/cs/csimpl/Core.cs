@@ -34,14 +34,6 @@ internal class Core
         atom.Value = args[1];
         return atom.Value;
     });
-    //private static readonly Mal.Function Swap = new(args =>
-    //{
-    //    var atom = args[0] as Mal.Atom;
-    //    var fn = args[1] as Mal.Function;
-    //    var rest = args[2..];
-    //    atom.Value = fn?.Op(rest);
-    //    return atom.Value;
-    //});
 
     private static readonly Dictionary<string, Mal.Function> Ns = new ()
     {
