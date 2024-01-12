@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace csimpl;
@@ -82,8 +81,16 @@ internal ref struct Reader
             var value when value.StartsWith("[") => new Mal.Vector(ReadList("[", "]")),
             var value when value.StartsWith("{") => ReadHashMap("{", "}"),
             var value when value.StartsWith("\"") => ReadStringInternal(),
+            var value when value.StartsWith("@") => ReaderMacroAtDeref(),
             _ => ReadSymbol()
         };
+    }
+
+    private Mal.List ReaderMacroAtDeref()
+    {
+        Next();
+        var deref = new List<Mal> { new Mal.Symbol("deref"), ReadForm() };
+        return new Mal.List(deref);
     }
 
     private Mal.String ReadStringInternal()

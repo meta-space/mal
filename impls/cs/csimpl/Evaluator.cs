@@ -69,7 +69,7 @@ internal class Evaluator
                                 return result;
                             }
 
-                            throw new MalRuntimeException("off the rails " + symbolName);
+                            throw new MalRuntimeException("malformed function invocation " + fn);
                     }
 
             }
