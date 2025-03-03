@@ -115,7 +115,7 @@ internal ref struct Reader
                     //.Replace(@"\\",   "\u029e")
                     .Replace("\\\"", "\"")
                     .Replace(@"\\n",    "\n")
-                    .Replace("\u029e", "\\");
+                    .Replace("\u029e", ":");
          return value;
     }
 
@@ -128,6 +128,7 @@ internal ref struct Reader
             "true" => Mal.True,
             "false" => Mal.False,
             "nil" => Mal.Nil,
+            var value when value.StartsWith(":") => new Mal.Keyword(value.ToString().Replace(":", "\u029e")),
             var value when decimal.TryParse(value, out var num) => new Mal.Number(num),
             var value => new Mal.Symbol(value.ToString())
         };

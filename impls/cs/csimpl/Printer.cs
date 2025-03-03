@@ -13,7 +13,8 @@ internal class Printer
             Mal.HashMap(var items) => $"{{{string.Join(' ', items.SelectMany(kvp => new[] { Print(kvp.Key), Print(kvp.Value) }))}}}",
             Mal.Number(var n) => $"{n}",
             Mal.String(var s) when !isHumanReadable => isInternal ? s : $"\"{s}\"",
-            Mal.String(var s) when isHumanReadable => Escape(s),
+            Mal.String(var s) when isHumanReadable => ToLiteral(s),
+            Mal.Keyword(var k) => $":{k.Substring(1)}",
             Mal.Symbol(var s) => $"{s}",
             Mal.Atom(var a) => $"(atom {Print(a.Value)})",
             Mal.Function(_) => "#<function>",
@@ -25,16 +26,6 @@ internal class Printer
     {
         var str = string.Join(separator, value.Select(v => Print(v, isHumanReadable, true)));
         return new Mal.String(str);
-    }
-
-    private static string Escape(string s)
-    {
-        if (s.Length > 0 && s[0] == '\u029e')
-        {
-            return ":" + s.Substring(1);
-        }
-
-        return ToLiteral(s);
     }
 
     static string ToLiteral(string input)

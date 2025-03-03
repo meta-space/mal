@@ -132,6 +132,11 @@ record class Mal
     [DebuggerDisplay("Symbol: {Value}")]
     public record Symbol(string Value) : Mal;
 
+
+    [DebuggerDisplay("Keyword: {}")]
+    public record Keyword(string Value) : Mal;
+
+
     [DebuggerDisplay("Constant: {Value}")]
     public record Constant(string Value) : Symbol(Value);
 
