@@ -83,6 +83,32 @@ internal class Evaluator
     }
 
 
+    //private Mal QQ_Expand(Mal ast)
+    //{
+    //    if (StartsWith(ast, "unquote")) // backquote
+    //    {
+    //        return ast[1];
+    //    }
+
+    //    if (StartsWith(ast, "splice-unquote")) // comma-at-sign ,@
+    //    {
+    //        throw new MalRuntimeException("mal-formed splice-unquote");
+    //    }
+
+    //    if (StartsWith(ast, "backquote"))
+    //    {
+    //        return QQ_Expand(QQ_Expand(ast[1]));
+    //    }
+
+    //    if (ast is Mal.List list and 
+    //            list is [Mal.Symbol car, Mal.List cdr])
+    //    {
+    //        return new Mal.List(new Mal.Symbol("append"), QQ_Expand(car), QQ_Expand(cdr));
+    //    }
+    //    else
+    //}
+
+
     // eval
     private static bool StartsWith(Mal ast, string sym)
     {
@@ -140,7 +166,6 @@ internal class Evaluator
             return ast;
         }
     }
-
 
     private static Mal EvalAst(Mal ast, Environment env)
     {

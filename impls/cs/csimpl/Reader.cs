@@ -81,16 +81,19 @@ internal ref struct Reader
             var value when value.StartsWith("[") => new Mal.Vector(ReadList("[", "]")),
             var value when value.StartsWith("{") => ReadHashMap("{", "}"),
             var value when value.StartsWith("\"") => ReadStringInternal(),
-            var value when value.StartsWith("@") => ReaderMacroAtDeref(),
+            var value when value.StartsWith("@") => ReaderMacro("deref"),
+            var value when value.StartsWith("'") => ReaderMacro("quote"),
+            var value when value.StartsWith("`") => ReaderMacro("quasiquote"),
+            var value when value.StartsWith("~") => ReaderMacro("unquote"),
+            var value when value.StartsWith("~@") => ReaderMacro("splice-unquote"),
             _ => ReadSymbol()
         };
     }
 
-    private Mal.List ReaderMacroAtDeref()
+    private Mal.List ReaderMacro(string symbol)
     {
         Next();
-        var deref = new List<Mal> { new Mal.Symbol("deref"), ReadForm() };
-        return new Mal.List(deref);
+        return new Mal.List(new Mal.Symbol(symbol), ReadForm());
     }
 
     private Mal.String ReadStringInternal()
