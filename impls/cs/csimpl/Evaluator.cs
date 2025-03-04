@@ -1,4 +1,7 @@
-﻿namespace csimpl;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices.ComTypes;
+
+namespace csimpl;
 
 internal class Evaluator
 {
@@ -35,6 +38,11 @@ internal class Evaluator
                             env = letEnv;
                             ast = final;
                             continue;
+                        case "quote":
+                            return items[1];
+                        case "quasiquote":
+                            ast = Quasiquote(items[1]);
+                            continue;
                         case "do":
                             var statements = items[1..].Select(s => Eval(s, env)).ToList();
                             ast = statements[^1];
@@ -68,13 +76,71 @@ internal class Evaluator
                                 var result = function.Op(args);
                                 return result;
                             }
-
                             throw new MalRuntimeException("malformed function invocation " + fn);
                     }
-
             }
         }
     }
+
+
+    // eval
+    private static bool StartsWith(Mal ast, string sym)
+    {
+        if (ast is Mal.List && !(ast is Mal.Vector))
+        {
+            var list = (Mal.List)ast;
+            if (list.Count == 2 && list[0] is Mal.Symbol)
+            {
+                Mal.Symbol a0 = (Mal.Symbol)list[0];
+                return a0.Value == sym;
+            }
+        }
+        return false;
+    }
+
+    private static Mal QQ_Loop(Mal.List ast)
+    {
+        var acc = new Mal.List();
+        for (int i = ast.Count - 1; 0 <= i; i -= 1)
+        {
+            Mal elt = ast[i];
+            if (StartsWith(elt, "splice-unquote"))
+            {
+                acc = new Mal.List(new Mal.Symbol("concat"), ((Mal.List)elt)[1], acc);
+            }
+            else
+            {
+                acc = new Mal.List(new Mal.Symbol("cons"), Quasiquote(elt), acc);
+            }
+        }
+        return acc;
+    }
+
+    private static Mal Quasiquote(Mal ast)
+    {
+        //  Check Vector subclass before List.
+        if (ast is Mal.Vector)
+        {
+            return new Mal.List(new Mal.Symbol("vec"), QQ_Loop(((Mal.List)ast)));
+        }
+        else if (StartsWith(ast, "unquote"))
+        {
+            return ((Mal.List)ast)[1];
+        }
+        else if (ast is Mal.List)
+        {
+            return QQ_Loop((Mal.List)ast);
+        }
+        else if (ast is Mal.Symbol || ast is Mal.HashMap)
+        {
+            return new Mal.List(new Mal.Symbol("quote"), ast);
+        }
+        else
+        {
+            return ast;
+        }
+    }
+
 
     private static Mal EvalAst(Mal ast, Environment env)
     {

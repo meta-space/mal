@@ -98,15 +98,6 @@ internal ref struct Reader
         var token = Next();
         var input = token.Value(_input).ToString();
         return new Mal.String(UnEscape(input));
-        return new Mal.String(input.Substring(1, input.Length-2));
-    }
-
-    private Mal.String ReadString()
-    {
-        var token = Next();
-        var input = token.Value(_input).ToString();
-        return new Mal.String(input);
-        return new Mal.String(UnEscape(input));
     }
 
     private static string UnEscape(string input)

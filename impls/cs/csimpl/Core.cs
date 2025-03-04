@@ -34,6 +34,23 @@ internal class Core
         atom.Value = args[1];
         return atom.Value;
     });
+    private static readonly Mal.Function Concat = new(args =>
+    {
+        var concat = new List<Mal>();
+        foreach (var a in args)
+        {
+            concat.AddRange(a as Mal.ISequence);
+        }
+        return new Mal.List(concat);
+    });
+    private static readonly Mal.Function Cons = new(args =>
+    {
+        var cdr = (args[1] as Mal.ISequence)!.ToList();
+        var car = new List<Mal> { args[0] };
+        car.AddRange(cdr);
+        return new Mal.List(car);
+    });
+    private static readonly Mal.Function Vector = new(args => new Mal.Vector(args[0] as IReadOnlyList<Mal>));
 
     private static readonly Dictionary<string, Mal.Function> Ns = new ()
     {
@@ -60,7 +77,9 @@ internal class Core
         { "atom?", IsAtom },
         { "deref", Deref },
         { "reset!", Reset },
-        //{ "swap!", Swap }
+        { "cons", Cons },
+        { "concat", Concat },
+        { "vec", Vector }
     };
 
     internal static void Init(Environment env)

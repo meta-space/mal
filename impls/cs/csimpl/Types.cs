@@ -13,6 +13,11 @@ record class Mal
     [DebuggerDisplay("({Items})")]
     public sealed record List(IReadOnlyList<Mal> Items) : Mal, ISequence
     {
+
+        public List(params Mal[] items) : this(items.ToList())
+        {
+        }
+
         public int Count => Items.Count;
 
         public Mal this[int index] => Items[index];
