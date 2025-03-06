@@ -25,7 +25,7 @@ internal class Core
     });
     private static readonly Mal.Function Slurp = new(args => args[0] is Mal.String str ? new Mal.String(File.ReadAllText(str.Value)) : Mal.Nil);
     private static readonly Mal.Function ReadString = new(args => args[0] is Mal.String str ? Reader.ReadStr(str.Value) : Mal.Nil);
-    private static readonly Mal.Function Atom = new(args => new Mal.Atom(new Mal.A(args[0])));
+    private static readonly Mal.Function Atom = new(args => new Mal.Atom(new Mal.Ref(args[0])));
     private static readonly Mal.Function IsAtom = new(args => (args[0] is Mal.Atom) ? Mal.True : Mal.False);
     private static readonly Mal.Function Deref = new(args => (args[0] as Mal.Atom)?.Value ?? Mal.Nil);
     private static readonly Mal.Function Reset = new(args =>

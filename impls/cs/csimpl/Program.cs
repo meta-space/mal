@@ -5,8 +5,7 @@ internal class Program
 {
     static Mal Read()
     {
-        string input = ReadLine.Read("user> ");
-        input = input.TrimStart('\0');
+        string input = ReadLine.Read("user> ").TrimStart('\0');
         return Reader.ReadStr(input);
     }
 

@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices.ComTypes;
+﻿using static csimpl.Mal;
 
 namespace csimpl;
 
@@ -20,11 +19,18 @@ internal class Evaluator
                     var symbolName = (items[0] is Mal.Symbol symbol) ? symbol.Value : "___<fn*>___";
                     switch (symbolName)
                     {
-                        case "def!":
+                        case "def!": {
                             var name = (Mal.Symbol)items[1];
                             var value = Eval(items[2], env);
                             env.Set(name, value);
                             return value;
+                        }
+                        case "defmacro!": {
+                            var name = (Mal.Symbol)items[1];
+                            var value = Eval(items[2], env) with { Meta = True };
+                            env.Set(name, value);
+                            return value;
+                        }
                         case "let*":
                             var lets = (Mal.ISequence)items[1];
                             var final = items[2];
@@ -58,24 +64,40 @@ internal class Evaluator
                         case "fn*":
                             var param = (Mal.ISequence)items[1];
                             var body = items[2];
-                            ast = new Mal.Closure(param, body, env, args => Mal.Nil);
+                            ast = new Mal.Closure(param, body, env, args => Eval(body, new Environment(env, param?.OfType<Symbol>().ToList() ?? new List<Symbol>(), args)));
                             continue;
                         default: // function call
                             var fn = Eval(items[0], env);
-                            var args = (Mal.ISequence)EvalAst(items[1..], env);
+                            bool isMacro = fn?.Meta == Mal.True;
 
-                            if (fn is Mal.Closure closure)
+                            if (isMacro && fn is Mal.Closure fun)
                             {
-                                ast = closure.Ast;
-                                var fparams = closure.Parameters.OfType<Mal.Symbol>().ToList();
-                                env = new Environment(closure.Env, fparams, args);
+                                var xargs = new Mal.List(items[1..].ToList());
+                                //var fparams = fun.Parameters.OfType<Mal.Symbol>().ToList();
+                                //env = new Environment(fun.Env, fparams, args);
+                                //ast = Eval(fun.Ast, env);
+                                //var xargs = (Mal.ISequence)EvalAst(items[1..], env);
+
+                                ast = fun.Op(xargs);
                                 continue;
                             }
-                            if (fn is Mal.Function function)
-                            {
-                                var result = function.Op(args);
-                                return result;
-                            }
+                            
+                            var args = (Mal.ISequence)EvalAst(items[1..], env);
+                                if (fn is Mal.Closure closure)
+                                {
+                                    ast = closure.Ast;
+                                    var fparams = closure.Parameters.OfType<Mal.Symbol>().ToList();
+                                    env = new Environment(closure.Env, fparams, args);
+                                    continue;
+                                }
+
+                                if (fn is Mal.Function function)
+                                {
+                                    var result = function.Op(args);
+                                    return result;
+                                }
+                            
+
                             throw new MalRuntimeException("malformed function invocation " + fn);
                     }
             }

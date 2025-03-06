@@ -5,6 +5,8 @@ namespace csimpl;
 
 record class Mal
 {
+    public Mal? Meta = null;
+
     public interface ISequence : IReadOnlyList<Mal>
     {
        // IReadOnlyList<Mal> Items => this;
@@ -159,9 +161,9 @@ record class Mal
         }
     }
 
-    internal class A
+    internal class Ref
     {
-        internal A(Mal value)
+        internal Ref(Mal value)
         {
             Value = value;
         }
@@ -170,7 +172,7 @@ record class Mal
     }
 
     [DebuggerDisplay("<{Value}>")]
-    public  record Atom(A R) : Mal
+    public  record Atom(Ref R) : Mal
     {
         public Mal Value
         {
@@ -220,7 +222,7 @@ record class Mal
         }
     }
 
-    public record Function(Func<ISequence, Mal> Op) : Mal
+    public record Function(Func<ISequence, Mal> Op) : Mal // Op should be called Apply
     {
     }
 
